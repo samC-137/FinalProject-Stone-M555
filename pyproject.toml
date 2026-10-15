@@ -29,7 +29,7 @@ packages = ["valutatrade_hub"]
 line-length = 88
 
 [tool.ruff.lint]
-select = ["E", "F", "I"]
+select = ["E", "F", "W", "I", "N"]
 
 [tool.valutatrade]
 base_currency = "USD"

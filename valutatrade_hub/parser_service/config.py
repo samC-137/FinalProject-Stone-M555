@@ -31,11 +31,9 @@ class ParserConfig:
     )
 
     @property
-    def RATES_FILE_PATH(self) -> Path:
+    def rates_file_path(self) -> Path:
         return self.DATA_DIR / "rates.json"
 
     @property
-    def HISTORY_FILE_PATH(self) -> Path:
+    def history_file_path(self) -> Path:
         return self.DATA_DIR / "exchange_rates.json"
-
-

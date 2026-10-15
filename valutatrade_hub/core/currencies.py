@@ -1,9 +1,9 @@
-import re
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from math import isfinite
 
 from valutatrade_hub.core.exceptions import CurrencyNotFoundError
+from valutatrade_hub.core.utils import normalize_currency_code
 
 
 @dataclass(frozen=True)
@@ -14,7 +14,11 @@ class Currency(ABC):
     name: str
 
     def __post_init__(self) -> None:
-        if not isinstance(self.code, str) or not re.fullmatch(r"[A-Z]{2,5}", self.code):
+        try:
+            valid_code = normalize_currency_code(self.code) == self.code
+        except (AttributeError, ValueError):
+            valid_code = False
+        if not valid_code:
             raise ValueError("Код валюты должен содержать 2–5 заглавных букв")
         if not isinstance(self.name, str) or not self.name.strip():
             raise ValueError("Название валюты не должно быть пустым")
@@ -83,7 +87,10 @@ _CURRENCY_DATA: dict[str, tuple[type[Currency], tuple[object, ...]]] = {
 
 def get_currency(code: str) -> Currency:
     """Найти валюту по коду без учёта регистра."""
-    normalized_code = code.strip().upper() if isinstance(code, str) else str(code)
+    try:
+        normalized_code = normalize_currency_code(code)
+    except ValueError:
+        raise CurrencyNotFoundError(code) from None
     currency_data = _CURRENCY_DATA.get(normalized_code)
     if currency_data is None:
         raise CurrencyNotFoundError(code)

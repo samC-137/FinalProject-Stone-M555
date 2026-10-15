@@ -7,6 +7,7 @@ from typing import Any
 
 from valutatrade_hub.core.currencies import get_currency
 from valutatrade_hub.core.exceptions import ApiRequestError, InsufficientFundsError
+from valutatrade_hub.core.utils import convert_amount
 
 
 class User:
@@ -260,7 +261,7 @@ class Portfolio:
         total = 0.0
         for code, wallet in self._wallets.items():
             rate = self._get_conversion_rate(code, base_code, pairs)
-            total += wallet.balance * rate
+            total += convert_amount(wallet.balance, rate)
         return total
 
     @classmethod
