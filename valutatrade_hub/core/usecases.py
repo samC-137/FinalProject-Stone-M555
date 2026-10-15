@@ -23,7 +23,7 @@ def register_user(
     password: str,
     database: DatabaseManager | None = None,
 ) -> User:
-    """Зарегистрировать пользователя и создать ему пустой портфель."""
+    """Зарегистрировать пользователя и создать портфель со стартовым USD."""
     manager = database or DatabaseManager()
     clean_username = username.strip() if isinstance(username, str) else username
     users = manager.load_users()
