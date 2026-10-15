@@ -78,9 +78,37 @@ def get_rate(
     database: DatabaseManager | None = None,
     settings: SettingsLoader | None = None,
 ) -> dict[str, Any]:
-    """Получить свежий курс из локального кэша."""
+    """Получить свежий курс, при необходимости обновив локальный кэш."""
     source_code = get_currency(from_code).code
     target_code = get_currency(to_code).code
+    manager = database or DatabaseManager()
+    config = settings or SettingsLoader()
+    try:
+        return _get_cached_rate(source_code, target_code, manager, config)
+    except ApiRequestError as cache_error:
+        from valutatrade_hub.parser_service.storage import RatesStorage
+        from valutatrade_hub.parser_service.updater import RatesUpdater
+
+        update_result = RatesUpdater(storage=RatesStorage(manager)).run_update()
+        try:
+            return _get_cached_rate(source_code, target_code, manager, config)
+        except ApiRequestError as refreshed_error:
+            update_errors = update_result.get("errors", [])
+            reason = refreshed_error.reason
+            if update_errors:
+                reason = f"{reason}; обновление: {'; '.join(update_errors)}"
+            raise ApiRequestError(
+                f"{reason}. Выполните 'update-rates' и попробуйте снова"
+            ) from cache_error
+
+
+def _get_cached_rate(
+    source_code: str,
+    target_code: str,
+    manager: DatabaseManager,
+    config: SettingsLoader,
+) -> dict[str, Any]:
+    """Найти курс в кэше и проверить срок его актуальности."""
     if source_code == target_code:
         now = datetime.now(timezone.utc).isoformat()
         return {
@@ -91,8 +119,6 @@ def get_rate(
             "source": "local",
         }
 
-    manager = database or DatabaseManager()
-    config = settings or SettingsLoader()
     cache = manager.load_rates()
     pairs = cache.get("pairs", {})
     if not isinstance(pairs, dict):
@@ -107,18 +133,15 @@ def get_rate(
             reverse_rate, updated_at, source = reverse
             rate = 1 / reverse_rate
         elif source_code != "USD" and target_code != "USD":
-            first = get_rate(source_code, "USD", manager, config)
-            second = get_rate("USD", target_code, manager, config)
+            first = _get_cached_rate(source_code, "USD", manager, config)
+            second = _get_cached_rate("USD", target_code, manager, config)
             rate = first["rate"] * second["rate"]
             first_time = datetime.fromisoformat(first["updated_at"])
             second_time = datetime.fromisoformat(second["updated_at"])
             updated_at = min(first_time, second_time).isoformat()
             source = f"{first['source']} + {second['source']}"
         else:
-            raise ApiRequestError(
-                f"курс {source_code}→{target_code} недоступен; "
-                "обновите курсы командой 'update-rates'"
-            )
+            raise ApiRequestError(f"курс {source_code}→{target_code} недоступен")
 
     timestamp = _check_rate_freshness(
         source_code,
