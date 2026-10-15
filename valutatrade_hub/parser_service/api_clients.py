@@ -41,7 +41,8 @@ class BaseApiClient(ABC):
             ) from error
 
         if response.status_code != 200:
-            raise ApiRequestError(f"{self.source}: HTTP {response.status_code}")
+            explanation = _http_error_message(response.status_code)
+            raise ApiRequestError(f"{self.source}: {explanation}")
 
         try:
             return response.json(), response.status_code
@@ -146,6 +147,18 @@ def _valid_rate(value: Any) -> bool:
         and isfinite(value)
         and value > 0
     )
+
+
+def _http_error_message(status_code: int) -> str:
+    if status_code == 401:
+        return "HTTP 401: проверьте API-ключ и его доступ"
+    if status_code == 403:
+        return "HTTP 403: у API-ключа нет нужных прав"
+    if status_code == 429:
+        return "HTTP 429: превышен лимит запросов; подождите и повторите"
+    if 500 <= status_code < 600:
+        return f"HTTP {status_code}: источник временно недоступен; попробуйте позже"
+    return f"HTTP {status_code}"
 
 
 def _parse_exchange_timestamp(value: Any) -> str:
