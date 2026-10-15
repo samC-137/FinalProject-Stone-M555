@@ -34,3 +34,4 @@ select = ["E", "F", "I"]
 [tool.valutatrade]
 base_currency = "USD"
 rates_ttl_seconds = 300
+fiat_rates_ttl_seconds = 86400

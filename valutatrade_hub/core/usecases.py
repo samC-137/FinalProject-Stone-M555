@@ -124,6 +124,7 @@ def get_rate(
         source_code,
         target_code,
         updated_at,
+        source,
         config,
     )
     return {
@@ -258,6 +259,7 @@ def _check_rate_freshness(
     from_code: str,
     to_code: str,
     updated_at: str,
+    source: str,
     settings: SettingsLoader,
 ) -> datetime:
     try:
@@ -268,7 +270,10 @@ def _check_rate_freshness(
         ) from error
     if timestamp.tzinfo is None:
         timestamp = timestamp.replace(tzinfo=timezone.utc)
-    ttl = int(settings.get("rates_ttl_seconds", 300))
+    is_fiat_rate = "ExchangeRate-API" in source
+    ttl_key = "fiat_rates_ttl_seconds" if is_fiat_rate else "rates_ttl_seconds"
+    default_ttl = 86400 if is_fiat_rate else 300
+    ttl = int(settings.get(ttl_key, default_ttl))
     if datetime.now(timezone.utc) - timestamp > timedelta(seconds=ttl):
         raise ApiRequestError(
             f"курс {from_code}→{to_code} устарел; обновите курсы "
