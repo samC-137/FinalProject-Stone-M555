@@ -12,6 +12,9 @@ from valutatrade_hub.core.usecases import (
     sell,
     show_portfolio,
 )
+from valutatrade_hub.infra.database import DatabaseManager
+from valutatrade_hub.parser_service.storage import RatesStorage
+from valutatrade_hub.parser_service.updater import RatesUpdater
 
 
 def _build_parser() -> argparse.ArgumentParser:
@@ -43,6 +46,23 @@ def _build_parser() -> argparse.ArgumentParser:
     rate_parser = commands.add_parser("get-rate", help="Показать курс валют")
     rate_parser.add_argument("--from", dest="from_code", required=True)
     rate_parser.add_argument("--to", dest="to_code", required=True)
+
+    update_parser = commands.add_parser(
+        "update-rates",
+        help="Обновить курсы валют",
+    )
+    update_parser.add_argument(
+        "--source",
+        choices=("coingecko", "exchangerate"),
+    )
+
+    show_rates_parser = commands.add_parser(
+        "show-rates",
+        help="Показать курсы из кэша",
+    )
+    show_rates_parser.add_argument("--currency")
+    show_rates_parser.add_argument("--top", type=int)
+    show_rates_parser.add_argument("--base", default="USD")
 
     commands.add_parser("exit", help="Закрыть программу")
     return parser
@@ -93,6 +113,53 @@ def _run_command(arguments: argparse.Namespace, user: User | None) -> User | Non
         current_user = login_user(arguments.username, arguments.password)
         print(f"Вы вошли как '{current_user.username}'")
         return current_user
+
+    if arguments.command == "update-rates":
+        selected_sources = {arguments.source} if arguments.source else None
+        result = RatesUpdater().run_update(selected_sources)
+        if result["updated"] == 0 and result["errors"]:
+            print("Не удалось обновить курсы. Подробности:")
+            for error in result["errors"]:
+                print(f"- {error}")
+        elif result["errors"]:
+            print(
+                f"Обновлено курсов: {result['updated']}. "
+                "Некоторые источники недоступны:"
+            )
+            for error in result["errors"]:
+                print(f"- {error}")
+        else:
+            print(
+                f"Обновление завершено. Курсов: {result['updated']}; "
+                f"время: {result['last_refresh']}"
+            )
+        return user
+
+    if arguments.command == "show-rates":
+        if arguments.top is not None and arguments.top < 1:
+            raise ValueError("Параметр --top должен быть больше нуля")
+        database = DatabaseManager()
+        rows = RatesStorage(database).list_rates(
+            currency=arguments.currency,
+            top=arguments.top,
+            base=arguments.base,
+        )
+        if not rows:
+            if database.load_rates().get("pairs"):
+                raise ValueError("Курсы по заданным условиям не найдены")
+            raise ValueError(
+                "Локальный кеш курсов пуст. Выполните 'update-rates', "
+                "чтобы загрузить данные."
+            )
+        last_refresh = database.load_rates().get("last_refresh")
+        print(f"Курсы из кэша (обновлено: {last_refresh or 'неизвестно'}):")
+        table = PrettyTable(["Пара", "Курс", "Источник", "Обновлено"])
+        for row in rows:
+            table.add_row(
+                [row["pair"], f"{row['rate']:.8f}", row["source"], row["updated_at"]]
+            )
+        print(table)
+        return user
 
     if user is None:
         print("Сначала выполните login")
