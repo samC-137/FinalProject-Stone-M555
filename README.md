@@ -77,39 +77,6 @@ cp .env.example .env
 
 ## Демо
 
-Для записи установите asciinema. Один раз привяжите его к аккаунту командой `asciinema auth` и откройте ссылку, которую покажет терминал.
-
-Из папки проекта запустите запись:
-
-```bash
-asciinema rec -i 1 -t "ValutaTrade Hub" -c "uv run valutatrade" demo_student.cast
-```
-
-Когда программа запустится, введите команды по очереди:
-
-```text
-update-rates
-show-rates --top 2
-register --username demo_student_1 --password demo123
-login --username demo_student_1 --password demo123
-buy --currency BTC --amount 0.01
-sell --currency BTC --amount 0.003
-show-portfolio
-get-rate --from BTC --to USD
-sell --currency BTC --amount 10
-buy --currency XYZ --amount 1
-exit
-```
-
-Если имя `demo_student_1` уже занято, замените его на новое в командах `register` и `login`. Используйте только демонстрационный пароль: команда `register` отображается в записи целиком. После выхода можно проверить запись и загрузить её:
-
-```bash
-asciinema play -i 1 demo_student.cast
-asciinema upload demo_student.cast
-```
-
-Загрузка напечатает ссылку на запись. Вставьте её ID в этот блок, чтобы README показывал превью со ссылкой на запись:
-
 ```markdown
-[![Демо ValutaTrade Hub](https://asciinema.org/a/ID.svg)](https://asciinema.org/a/ID)
+[![Демо ValutaTrade Hub](https://asciinema.org/a/79IsFOvEJGaN2o8c.svg)](https://asciinema.org/a/79IsFOvEJGaN2o8c)
 ```

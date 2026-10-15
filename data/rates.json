@@ -1,4 +1,56 @@
 {
-  "pairs": {},
-  "last_refresh": null
+  "pairs": {
+    "BTC_USD": {
+      "rate": 80139.0,
+      "updated_at": "2026-10-15T14:01:12.030388+00:00",
+      "source": "CoinGecko",
+      "meta": {
+        "raw_id": "bitcoin",
+        "status_code": 200
+      }
+    },
+    "ETH_USD": {
+      "rate": 2337.72,
+      "updated_at": "2026-10-15T14:01:12.030388+00:00",
+      "source": "CoinGecko",
+      "meta": {
+        "raw_id": "ethereum",
+        "status_code": 200
+      }
+    },
+    "SOL_USD": {
+      "rate": 101.45,
+      "updated_at": "2026-10-15T14:01:12.030388+00:00",
+      "source": "CoinGecko",
+      "meta": {
+        "raw_id": "solana",
+        "status_code": 200
+      }
+    },
+    "EUR_USD": {
+      "rate": 1.1179429849077698,
+      "updated_at": "2026-10-15T00:00:01+00:00",
+      "source": "ExchangeRate-API",
+      "meta": {
+        "status_code": 200
+      }
+    },
+    "GBP_USD": {
+      "rate": 1.322401481089659,
+      "updated_at": "2026-10-15T00:00:01+00:00",
+      "source": "ExchangeRate-API",
+      "meta": {
+        "status_code": 200
+      }
+    },
+    "RUB_USD": {
+      "rate": 0.011914492073288424,
+      "updated_at": "2026-10-15T00:00:01+00:00",
+      "source": "ExchangeRate-API",
+      "meta": {
+        "status_code": 200
+      }
+    }
+  },
+  "last_refresh": "2026-10-15T14:01:12.676741+00:00"
 }
