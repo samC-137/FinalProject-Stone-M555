@@ -26,11 +26,13 @@ class BaseApiClient(ABC):
         self,
         url: str,
         params: dict[str, str] | None = None,
+        headers: dict[str, str] | None = None,
     ) -> tuple[Any, int]:
         try:
             response = requests.get(
                 url,
                 params=params,
+                headers=headers,
                 timeout=self.config.REQUEST_TIMEOUT,
             )
         except requests.exceptions.RequestException as error:
@@ -54,9 +56,15 @@ class CoinGeckoClient(BaseApiClient):
 
     def fetch_rates(self) -> dict[str, dict[str, Any]]:
         ids = ",".join(self.config.CRYPTO_ID_MAP.values())
+        headers = (
+            {"x-cg-demo-api-key": self.config.COINGECKO_API_KEY}
+            if self.config.COINGECKO_API_KEY
+            else None
+        )
         payload, status_code = self._get_json(
             self.config.COINGECKO_URL,
             {"ids": ids, "vs_currencies": self.config.BASE_CURRENCY.lower()},
+            headers,
         )
         if not isinstance(payload, dict):
             raise ApiRequestError("CoinGecko: ответ имеет неверный формат")

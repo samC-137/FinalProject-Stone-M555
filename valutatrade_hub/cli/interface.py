@@ -1,6 +1,8 @@
 import argparse
 import shlex
+from pathlib import Path
 
+from dotenv import load_dotenv
 from prettytable import PrettyTable
 
 from valutatrade_hub.core.exceptions import (
@@ -91,6 +93,8 @@ def _build_parser() -> argparse.ArgumentParser:
 
 def main() -> None:
     """Запустить интерактивный командный интерфейс."""
+    env_file = Path(__file__).resolve().parents[2] / ".env"
+    load_dotenv(env_file)
     configure_logging()
     parser = _build_parser()
     current_user: User | None = None

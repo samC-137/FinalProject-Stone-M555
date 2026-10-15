@@ -7,6 +7,9 @@ from pathlib import Path
 class ParserConfig:
     """Настройки получения курсов валют."""
 
+    COINGECKO_API_KEY: str | None = field(
+        default_factory=lambda: os.getenv("COINGECKO_API_KEY")
+    )
     EXCHANGERATE_API_KEY: str | None = field(
         default_factory=lambda: os.getenv("EXCHANGERATE_API_KEY")
     )
