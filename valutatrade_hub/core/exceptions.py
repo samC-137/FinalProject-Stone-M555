@@ -25,3 +25,26 @@ class ApiRequestError(Exception):
     def __init__(self, reason: str) -> None:
         self.reason = reason
         super().__init__(f"Ошибка при обращении к внешнему API: {reason}")
+
+
+class UsernameAlreadyExistsError(Exception):
+    """Возникает, если имя пользователя уже занято."""
+
+    def __init__(self, username: str) -> None:
+        self.username = username
+        super().__init__(f"Имя пользователя '{username}' уже занято")
+
+
+class UserNotFoundError(Exception):
+    """Возникает, если пользователь не зарегистрирован."""
+
+    def __init__(self, username: str) -> None:
+        self.username = username
+        super().__init__(f"Пользователь '{username}' не найден")
+
+
+class InvalidPasswordError(Exception):
+    """Возникает, если пароль не совпадает."""
+
+    def __init__(self) -> None:
+        super().__init__("Неверный пароль")

@@ -54,6 +54,21 @@ class User:
         hashed_password = cls._hash_password(password, salt)
         return cls(user_id, username, hashed_password, salt, datetime.now())
 
+    @classmethod
+    def from_dict(cls, data: dict[str, Any]) -> "User":
+        """Восстановить пользователя из JSON-совместимых данных."""
+        try:
+            registration_date = datetime.fromisoformat(data["registration_date"])
+            return cls(
+                user_id=data["user_id"],
+                username=data["username"],
+                hashed_password=data["hashed_password"],
+                salt=data["salt"],
+                registration_date=registration_date,
+            )
+        except (KeyError, TypeError, ValueError) as error:
+            raise ValueError("Данные пользователя имеют неверный формат") from error
+
     @staticmethod
     def _validate_password(password: str) -> None:
         if not isinstance(password, str) or len(password) < 4:
