@@ -1,0 +1,31 @@
+[project]
+name = "finalproject-stone-m555"
+version = "0.1.0"
+description = "Консольная программа для виртуальной торговли валютами"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "prettytable>=3.12.0",
+    "requests>=2.32.0",
+]
+
+[project.scripts]
+valutatrade = "valutatrade_hub.cli.interface:main"
+
+[dependency-groups]
+dev = [
+    "ruff>=0.14.0",
+]
+
+[build-system]
+requires = ["hatchling>=1.27.0"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["valutatrade_hub"]
+
+[tool.ruff]
+line-length = 88
+
+[tool.ruff.lint]
+select = ["E", "F", "I"]
