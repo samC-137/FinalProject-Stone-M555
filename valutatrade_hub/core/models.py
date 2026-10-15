@@ -2,6 +2,11 @@ import hashlib
 import hmac
 import secrets
 from datetime import datetime
+from math import isfinite
+from typing import Any
+
+from valutatrade_hub.core.currencies import get_currency
+from valutatrade_hub.core.exceptions import ApiRequestError, InsufficientFundsError
 
 
 class User:
@@ -114,3 +119,192 @@ class User:
             "salt": self._salt,
             "registration_date": self._registration_date.isoformat(),
         }
+
+
+class Wallet:
+    """Кошелёк с балансом одной валюты."""
+
+    def __init__(self, currency_code: str, balance: float = 0.0) -> None:
+        self._currency_code = get_currency(currency_code).code
+        self._balance = 0.0
+        self.balance = balance
+
+    @property
+    def currency_code(self) -> str:
+        """Вернуть код валюты кошелька."""
+        return self._currency_code
+
+    @property
+    def balance(self) -> float:
+        """Вернуть текущий баланс."""
+        return self._balance
+
+    @balance.setter
+    def balance(self, value: float) -> None:
+        if (
+            isinstance(value, bool)
+            or not isinstance(value, (int, float))
+            or not isfinite(value)
+            or value < 0
+        ):
+            raise ValueError("Баланс должен быть неотрицательным числом")
+        self._balance = float(value)
+
+    @staticmethod
+    def _validate_amount(amount: float) -> None:
+        if (
+            isinstance(amount, bool)
+            or not isinstance(amount, (int, float))
+            or not isfinite(amount)
+            or amount <= 0
+        ):
+            raise ValueError("Сумма должна быть положительным числом")
+
+    def deposit(self, amount: float) -> None:
+        """Добавить средства на кошелёк."""
+        self._validate_amount(amount)
+        self.balance = self._balance + amount
+
+    def withdraw(self, amount: float) -> None:
+        """Снять средства, если баланса хватает."""
+        self._validate_amount(amount)
+        if amount > self._balance:
+            raise InsufficientFundsError(self._balance, amount, self._currency_code)
+        self.balance = self._balance - amount
+
+    def get_balance_info(self) -> str:
+        """Вернуть баланс в удобном для показа виде."""
+        return f"{self._currency_code}: {self._balance:.4f}"
+
+    def to_dict(self) -> dict[str, str | float]:
+        """Подготовить кошелёк для JSON-хранилища."""
+        return {"currency_code": self._currency_code, "balance": self._balance}
+
+
+class Portfolio:
+    """Кошельки одного пользователя."""
+
+    def __init__(
+        self,
+        user: User,
+        wallets: dict[str, Wallet] | None = None,
+    ) -> None:
+        if not isinstance(user, User):
+            raise ValueError("Портфель должен быть связан с пользователем")
+        self._user = user
+        self._wallets: dict[str, Wallet] = {}
+        for code, wallet in (wallets or {}).items():
+            if not isinstance(wallet, Wallet) or wallet.currency_code != code:
+                raise ValueError("Ключ портфеля должен совпадать с валютой кошелька")
+            self._wallets[code] = wallet
+
+    @property
+    def user(self) -> User:
+        """Вернуть владельца портфеля."""
+        return self._user
+
+    @property
+    def user_id(self) -> int:
+        """Вернуть ID владельца портфеля."""
+        return self._user.user_id
+
+    @property
+    def wallets(self) -> dict[str, Wallet]:
+        """Вернуть копию словаря кошельков."""
+        return self._wallets.copy()
+
+    def add_currency(self, currency_code: str) -> Wallet:
+        """Добавить пустой кошелёк, если такой валюты ещё нет."""
+        code = get_currency(currency_code).code
+        if code in self._wallets:
+            raise ValueError(f"Кошелёк '{code}' уже есть в портфеле")
+        wallet = Wallet(code)
+        self._wallets[code] = wallet
+        return wallet
+
+    def get_wallet(self, currency_code: str) -> Wallet | None:
+        """Вернуть кошелёк или None, если он ещё не добавлен."""
+        code = get_currency(currency_code).code
+        return self._wallets.get(code)
+
+    def get_total_value(
+        self,
+        base_currency: str = "USD",
+        exchange_rates: dict[str, Any] | None = None,
+    ) -> float:
+        """Посчитать стоимость портфеля по переданным курсам."""
+        base_code = get_currency(base_currency).code
+        pairs = exchange_rates or {}
+        if "pairs" in pairs and isinstance(pairs["pairs"], dict):
+            pairs = pairs["pairs"]
+
+        total = 0.0
+        for code, wallet in self._wallets.items():
+            rate = self._get_conversion_rate(code, base_code, pairs)
+            total += wallet.balance * rate
+        return total
+
+    @classmethod
+    def from_dict(cls, data: dict[str, Any], user: User) -> "Portfolio":
+        """Восстановить портфель из JSON-совместимых данных."""
+        wallets_data = data.get("wallets", {})
+        if not isinstance(wallets_data, dict):
+            raise ValueError("Список кошельков в портфеле имеет неверный формат")
+        wallets = {
+            code: Wallet(code, wallet_data["balance"])
+            for code, wallet_data in wallets_data.items()
+        }
+        return cls(user, wallets)
+
+    def to_dict(self) -> dict[str, Any]:
+        """Подготовить портфель для JSON-хранилища."""
+        return {
+            "user_id": self.user_id,
+            "wallets": {
+                code: {"balance": wallet.balance}
+                for code, wallet in self._wallets.items()
+            },
+        }
+
+    @staticmethod
+    def _get_conversion_rate(
+        from_code: str,
+        to_code: str,
+        pairs: dict[str, Any],
+    ) -> float:
+        if from_code == to_code:
+            return 1.0
+
+        direct_rate = Portfolio._read_pair_rate(from_code, to_code, pairs)
+        if direct_rate is not None:
+            return direct_rate
+        reverse_rate = Portfolio._read_pair_rate(to_code, from_code, pairs)
+        if reverse_rate is not None:
+            return 1.0 / reverse_rate
+
+        if from_code != "USD" and to_code != "USD":
+            to_usd = Portfolio._get_conversion_rate(from_code, "USD", pairs)
+            usd_to_base = Portfolio._get_conversion_rate("USD", to_code, pairs)
+            return to_usd * usd_to_base
+
+        raise ApiRequestError(f"не найден курс {from_code}→{to_code}")
+
+    @staticmethod
+    def _read_pair_rate(
+        from_code: str,
+        to_code: str,
+        pairs: dict[str, Any],
+    ) -> float | None:
+        value = pairs.get(f"{from_code}_{to_code}")
+        if isinstance(value, dict):
+            value = value.get("rate")
+        if value is None:
+            return None
+        if (
+            isinstance(value, bool)
+            or not isinstance(value, (int, float))
+            or not isfinite(value)
+            or value <= 0
+        ):
+            raise ApiRequestError(f"некорректный курс {from_code}→{to_code}")
+        return float(value)
