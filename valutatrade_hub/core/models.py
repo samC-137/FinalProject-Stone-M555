@@ -234,7 +234,11 @@ class Portfolio:
     ) -> float:
         """Посчитать стоимость портфеля по переданным курсам."""
         base_code = get_currency(base_currency).code
-        pairs = exchange_rates or {}
+        if exchange_rates is None:
+            from valutatrade_hub.infra.database import DatabaseManager
+
+            exchange_rates = DatabaseManager().load_rates()
+        pairs = exchange_rates
         if "pairs" in pairs and isinstance(pairs["pairs"], dict):
             pairs = pairs["pairs"]
 
