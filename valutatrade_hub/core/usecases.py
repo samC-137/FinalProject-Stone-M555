@@ -11,10 +11,12 @@ from valutatrade_hub.core.exceptions import (
     WalletNotFoundError,
 )
 from valutatrade_hub.core.models import Portfolio, User, Wallet
+from valutatrade_hub.decorators import log_action
 from valutatrade_hub.infra.database import DatabaseManager
 from valutatrade_hub.infra.settings import SettingsLoader
 
 
+@log_action("REGISTER")
 def register_user(
     username: str,
     password: str,
@@ -44,6 +46,7 @@ def register_user(
     return user
 
 
+@log_action("LOGIN")
 def login_user(
     username: str,
     password: str,
@@ -147,6 +150,7 @@ def show_portfolio(
     return portfolio, portfolio.get_total_value(base_code, rates)
 
 
+@log_action("BUY", verbose=True)
 def buy(
     user: User,
     currency_code: str,
@@ -175,6 +179,7 @@ def buy(
     }
 
 
+@log_action("SELL", verbose=True)
 def sell(
     user: User,
     currency_code: str,

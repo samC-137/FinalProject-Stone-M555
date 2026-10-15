@@ -13,6 +13,7 @@ from valutatrade_hub.core.usecases import (
     show_portfolio,
 )
 from valutatrade_hub.infra.database import DatabaseManager
+from valutatrade_hub.logging_config import configure_logging
 from valutatrade_hub.parser_service.storage import RatesStorage
 from valutatrade_hub.parser_service.updater import RatesUpdater
 
@@ -70,6 +71,7 @@ def _build_parser() -> argparse.ArgumentParser:
 
 def main() -> None:
     """Запустить интерактивный командный интерфейс."""
+    configure_logging()
     parser = _build_parser()
     current_user: User | None = None
     print("ValutaTrade Hub. Введите 'help' для списка команд или 'exit' для выхода.")
