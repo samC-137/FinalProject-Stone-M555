@@ -24,3 +24,11 @@ class SettingsLoader:
     def get(self, key: str, default: Any = None) -> Any:
         """Получить значение настройки."""
         return self._settings.get(key, default)
+
+    def get_data_dir(self) -> Path:
+        """Вернуть абсолютный путь к каталогу данных проекта."""
+        project_root = Path(__file__).resolve().parents[2]
+        data_dir = Path(self.get("data_dir", "data"))
+        if not data_dir.is_absolute():
+            data_dir = project_root / data_dir
+        return data_dir.resolve()

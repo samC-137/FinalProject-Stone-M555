@@ -189,6 +189,20 @@ def _run_command(arguments: argparse.Namespace, user: User | None) -> User | Non
         print(table)
         return user
 
+    if arguments.command == "get-rate":
+        rate_info = get_rate(arguments.from_code, arguments.to_code)
+        rate = rate_info["rate"]
+        reverse_rate = 1 / rate
+        print(
+            f"Курс {rate_info['from_currency']}→{rate_info['to_currency']}: "
+            f"{rate:.8f} (обновлено: {rate_info['updated_at']})"
+        )
+        print(
+            f"Обратный курс {rate_info['to_currency']}→"
+            f"{rate_info['from_currency']}: {reverse_rate:.8f}"
+        )
+        return user
+
     if user is None:
         print("Сначала выполните login")
         return None
@@ -223,20 +237,6 @@ def _run_command(arguments: argparse.Namespace, user: User | None) -> User | Non
         )
         label = "Стоимость" if arguments.command == "buy" else "Выручка"
         print(f"Оценочная {label.lower()}: {result['value_usd']:.2f} USD")
-        return user
-
-    if arguments.command == "get-rate":
-        rate_info = get_rate(arguments.from_code, arguments.to_code)
-        rate = rate_info["rate"]
-        reverse_rate = 1 / rate
-        print(
-            f"Курс {rate_info['from_currency']}→{rate_info['to_currency']}: "
-            f"{rate:.8f} (обновлено: {rate_info['updated_at']})"
-        )
-        print(
-            f"Обратный курс {rate_info['to_currency']}→"
-            f"{rate_info['from_currency']}: {reverse_rate:.8f}"
-        )
         return user
 
     return user

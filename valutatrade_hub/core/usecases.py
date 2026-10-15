@@ -11,6 +11,7 @@ from valutatrade_hub.core.exceptions import (
     WalletNotFoundError,
 )
 from valutatrade_hub.core.models import Portfolio, User, Wallet
+from valutatrade_hub.core.utils import convert_amount
 from valutatrade_hub.decorators import log_action
 from valutatrade_hub.infra.database import DatabaseManager
 from valutatrade_hub.infra.settings import SettingsLoader
@@ -33,8 +34,16 @@ def register_user(
     user = User.create(next_id, clean_username, password)
     portfolios = manager.load_portfolios()
 
+    starting_balance = SettingsLoader().get("starting_balance_usd", 10000)
+    usd_wallet = Wallet("USD", float(starting_balance))
     updated_users = [*users, user.to_dict()]
-    updated_portfolios = [*portfolios, {"user_id": user.user_id, "wallets": {}}]
+    updated_portfolios = [
+        *portfolios,
+        {
+            "user_id": user.user_id,
+            "wallets": {"USD": {"balance": usd_wallet.balance}},
+        },
+    ]
     try:
         manager.save_users(updated_users)
         manager.save_portfolios(updated_portfolios)
@@ -184,9 +193,15 @@ def buy(
     """Добавить купленное количество валюты в портфель."""
     Wallet._validate_amount(amount)
     code = get_currency(currency_code).code
+    if code == "USD":
+        raise ValueError("USD используется для расчётов и не покупается")
     manager = database or DatabaseManager()
     rate = get_rate(code, "USD", manager)
     portfolio = _load_portfolio(user, manager)
+    usd_wallet = portfolio.get_wallet("USD")
+    if usd_wallet is None:
+        usd_wallet = portfolio.add_currency("USD")
+    usd_wallet.withdraw(convert_amount(amount, rate["rate"]))
     wallet = portfolio.get_wallet(code)
     if wallet is None:
         wallet = portfolio.add_currency(code)
@@ -213,6 +228,8 @@ def sell(
     """Уменьшить баланс кошелька на проданное количество валюты."""
     Wallet._validate_amount(amount)
     code = get_currency(currency_code).code
+    if code == "USD":
+        raise ValueError("USD используется для расчётов и не продаётся")
     manager = database or DatabaseManager()
     portfolio = _load_portfolio(user, manager)
     wallet = portfolio.get_wallet(code)
@@ -221,6 +238,10 @@ def sell(
     rate = get_rate(code, "USD", manager)
     old_balance = wallet.balance
     wallet.withdraw(amount)
+    usd_wallet = portfolio.get_wallet("USD")
+    if usd_wallet is None:
+        usd_wallet = portfolio.add_currency("USD")
+    usd_wallet.deposit(convert_amount(amount, rate["rate"]))
     _save_portfolio(portfolio, manager)
     return {
         "currency_code": code,

@@ -33,5 +33,7 @@ select = ["E", "F", "W", "I", "N"]
 
 [tool.valutatrade]
 base_currency = "USD"
+data_dir = "data"
+starting_balance_usd = 10000
 rates_ttl_seconds = 300
 fiat_rates_ttl_seconds = 86400

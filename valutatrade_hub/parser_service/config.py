@@ -2,6 +2,12 @@ import os
 from dataclasses import dataclass, field
 from pathlib import Path
 
+from valutatrade_hub.infra.settings import SettingsLoader
+
+
+def _get_data_dir() -> Path:
+    return SettingsLoader().get_data_dir()
+
 
 @dataclass(frozen=True)
 class ParserConfig:
@@ -26,9 +32,7 @@ class ParserConfig:
         }
     )
     REQUEST_TIMEOUT: int = 10
-    DATA_DIR: Path = field(
-        default_factory=lambda: Path(__file__).resolve().parents[2] / "data"
-    )
+    DATA_DIR: Path = field(default_factory=_get_data_dir)
 
     @property
     def rates_file_path(self) -> Path:

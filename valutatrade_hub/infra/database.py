@@ -5,6 +5,8 @@ from copy import deepcopy
 from pathlib import Path
 from typing import Any
 
+from valutatrade_hub.infra.settings import SettingsLoader
+
 
 class DatabaseManager:
     """Единая точка чтения и записи JSON-файлов проекта."""
@@ -17,15 +19,21 @@ class DatabaseManager:
         "exchange_rates.json",
     }
 
-    def __new__(cls) -> "DatabaseManager":
+    def __new__(cls, data_dir: Path | None = None) -> "DatabaseManager":
+        if data_dir is not None:
+            return super().__new__(cls)
         if cls._instance is None:
             cls._instance = super().__new__(cls)
         return cls._instance
 
-    def __init__(self) -> None:
+    def __init__(self, data_dir: Path | None = None) -> None:
+        if data_dir is not None:
+            self._data_dir = Path(data_dir).resolve()
+            self._data_dir.mkdir(parents=True, exist_ok=True)
+            return
         if hasattr(self, "_data_dir"):
             return
-        self._data_dir = Path(__file__).resolve().parents[2] / "data"
+        self._data_dir = SettingsLoader().get_data_dir()
         self._data_dir.mkdir(parents=True, exist_ok=True)
 
     def _get_path(self, filename: str) -> Path:
