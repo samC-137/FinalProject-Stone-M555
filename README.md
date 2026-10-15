@@ -22,8 +22,8 @@ uv run valutatrade
 
 ## Команды
 
-- `register --username sam --password 1234` — создать пользователя.
-- `login --username sam --password 1234` — войти.
+- `register --username vik --password 1234` — создать пользователя.
+- `login --username vik --password 1234` — войти.
 - `show-portfolio --base EUR` — посмотреть кошельки и их стоимость в выбранной валюте. Если `--base` не указан, используется USD.
 - `buy --currency BTC --amount 0.05` — добавить валюту в портфель.
 - `sell --currency BTC --amount 0.01` — уменьшить баланс кошелька.
@@ -77,4 +77,4 @@ cp .env.example .env
 
 ## Демо
 
-[![Демо ValutaTrade Hub](https://asciinema.org/a/79IsFOvEJGaN2o8c.svg)](https://asciinema.org/a/79IsFOvEJGaN2o8c)
+[![Демо ValutaTrade Hub](https://asciinema.org/a/MoazsGjYToDsysHM.svg)](https://asciinema.org/a/MoazsGjYToDsysHM)

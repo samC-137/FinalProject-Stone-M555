@@ -5,5 +5,12 @@
     "hashed_password": "0f320d6778dbaca70bcb81e69a5d32c6258d9e663f38f433bb65404ba83fc276",
     "salt": "95713324d97bd0629723bbcc72b3683e",
     "registration_date": "2026-10-15T09:27:41.275157"
+  },
+  {
+    "user_id": 2,
+    "username": "vik",
+    "hashed_password": "f18b62959d73ed1b6a15761254a74f17684a10aefa53a1e3d2e6be3fa414ffb2",
+    "salt": "216c69a31ae3766920bd8403d4eaab45",
+    "registration_date": "2026-10-15T10:19:54.980437"
   }
 ]
