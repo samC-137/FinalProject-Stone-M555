@@ -3,6 +3,15 @@ import shlex
 
 from prettytable import PrettyTable
 
+from valutatrade_hub.core.exceptions import (
+    ApiRequestError,
+    CurrencyNotFoundError,
+    InsufficientFundsError,
+    InvalidPasswordError,
+    UsernameAlreadyExistsError,
+    UserNotFoundError,
+    WalletNotFoundError,
+)
 from valutatrade_hub.core.models import User
 from valutatrade_hub.core.usecases import (
     buy,
@@ -16,6 +25,17 @@ from valutatrade_hub.infra.database import DatabaseManager
 from valutatrade_hub.logging_config import configure_logging
 from valutatrade_hub.parser_service.storage import RatesStorage
 from valutatrade_hub.parser_service.updater import RatesUpdater
+
+_USER_ERRORS = (
+    ApiRequestError,
+    CurrencyNotFoundError,
+    InsufficientFundsError,
+    InvalidPasswordError,
+    UserNotFoundError,
+    UsernameAlreadyExistsError,
+    WalletNotFoundError,
+    ValueError,
+)
 
 
 def _build_parser() -> argparse.ArgumentParser:
@@ -97,8 +117,10 @@ def main() -> None:
             current_user = _run_command(arguments, current_user)
         except SystemExit:
             continue
-        except Exception as error:
+        except _USER_ERRORS as error:
             print(str(error))
+        except Exception as error:
+            print(f"Внутренняя ошибка: {error}")
 
 
 def _run_command(arguments: argparse.Namespace, user: User | None) -> User | None:
