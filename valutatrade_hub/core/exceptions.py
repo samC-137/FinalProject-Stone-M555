@@ -48,3 +48,13 @@ class InvalidPasswordError(Exception):
 
     def __init__(self) -> None:
         super().__init__("Неверный пароль")
+
+
+class WalletNotFoundError(Exception):
+    """Возникает, если у пользователя нет кошелька для валюты."""
+
+    def __init__(self, code: str) -> None:
+        self.code = code
+        super().__init__(
+            f"У вас нет кошелька '{code}'. Купите эту валюту, чтобы создать его."
+        )
